@@ -8,6 +8,7 @@
 3. [Go read up on how powerful the Derpibooru search really is](https://derpibooru.org/search/syntax)
 4. Start up the Application again
 5. Enter the tags you want to search for
+5. Enter the number of images you want to download
 6. Wait
 7. Done
 
