@@ -16,7 +16,8 @@ namespace DerpibooruDownloader
     {
         static void Main()
         {
-            string tags = "artist:atryl, safe, twilight sparkle, fluttershy";
+            string title = "DD";
+            Console.Title = title;
             string apiKey = "";
             string domain = "derpibooru.org";
             string cDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
@@ -24,6 +25,8 @@ namespace DerpibooruDownloader
             cDir = $"{cDir}{downloadFolder}";
             Get.SetDownloadFolder(cDir);
             Directory.CreateDirectory(cDir);
+            Console.Write("Please enter the tags you want to download for: ");
+            string tags = Console.ReadLine();
             string requestUrl =
                 $"https://{domain}/search.json?q={tags}&key={apiKey}&sf=created_at&sd=desc&perpage=50&page=";
             DerpibooruResponse.Rootobject first_images =
@@ -32,7 +35,8 @@ namespace DerpibooruDownloader
             allimages.AddRange(first_images.search.ToList());
             int total_items = first_images.total;
             int pages = (int) Math.Ceiling(total_items/50.0);
-            if (allimages.Count != total_items)
+
+            if (allimages.Count <= total_items)
             {
                 for (int i = 2; i <= pages; i++)
                 {
@@ -44,13 +48,18 @@ namespace DerpibooruDownloader
             }
 
             Console.WriteLine($"{allimages.Count} images to download!");
-
+            int u = 1;
             foreach (DerpibooruResponse.Search i in allimages)
             {
+                Console.Title = $"{title} [{u}/{total_items}]";
                 Get.DownloadImage(i.image, i.id);
-                Console.WriteLine("DONE!");
+                u++;
+                if (u <= total_items)
+                {
+                    Console.Title = $"{title} [{u}/{total_items}]";
+                }
             }
-            Console.WriteLine("DONE!");
+            Console.WriteLine("DONE ALL!");
             Console.ReadLine();
         }
     }
@@ -64,27 +73,26 @@ namespace DerpibooruDownloader
             Console.Write($"Downloading {id}...");
             string extension = Path.GetExtension(url);
             string fileName = $"{id}{extension}";
+
             string downloadPath = IsMono() ? $@"{cDir}/{fileName}" : $@"{cDir}\{fileName}";
-
-            using (WebClient webConnection = new WebClient())
+            if (!File.Exists(downloadPath))
             {
-                var notifier = new AutoResetEvent(false);
-                long lReceived;
-                long lTotal;
-                webConnection.DownloadProgressChanged += delegate(object sender, DownloadProgressChangedEventArgs e)
+                using (WebClient webConnection = new WebClient())
                 {
-                    Console.Clear();
-                    Console.WriteLine(e.ProgressPercentage + "% (" + e.BytesReceived/1024f + "kb of " +
-                                      e.TotalBytesToReceive/1024f + "kb)");
-                    lReceived = e.BytesReceived;
-                    lTotal = e.TotalBytesToReceive;
+                    AutoResetEvent notifier = new AutoResetEvent(false);
+                    webConnection.DownloadFileCompleted += delegate
+                    {
+                        Console.WriteLine("Done!");
+                        notifier.Set();
+                    };
 
-                    // Indicate that things are done
-                    if (lReceived >= lTotal) notifier.Set();
-                };
-
-                webConnection.DownloadFileAsync(new Uri($"https:{url}"), downloadPath);
-                notifier.WaitOne();
+                    webConnection.DownloadFileAsync(new Uri($"https:{url}"), downloadPath);
+                    notifier.WaitOne();
+                }
+            }
+            else
+            {
+                Console.WriteLine("Already exists!");
             }
         }
 
