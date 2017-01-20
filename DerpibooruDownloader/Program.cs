@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -18,15 +19,42 @@ namespace DerpibooruDownloader
         {
             string title = "DD";
             Console.Title = title;
-            string apiKey = "";
+            string apiKey;
             string domain = "derpibooru.org";
             string cDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             string downloadFolder = Get.IsMono() ? "/Downloads" : "\\Downloads";
             cDir = $"{cDir}{downloadFolder}";
             Get.SetDownloadFolder(cDir);
             Directory.CreateDirectory(cDir);
+            var consolecolor = Console.ForegroundColor;
+
+            if (Properties.Settings.Default.ApiKey.Length == 0)
+            {
+                Console.Write("Please enter your API key: ");
+                apiKey = Console.ReadLine();
+                Properties.Settings.Default.ApiKey = apiKey;
+                Properties.Settings.Default.Save();
+
+            }
+            else
+            {
+                apiKey = Properties.Settings.Default.ApiKey;
+            }
+
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("This downloads ALL the images that match the tags you specificy.");
+            Console.ForegroundColor = consolecolor;
+            Console.WriteLine("Check out the search syntax docs to learn how the search should be used.");
+            Console.WriteLine("Type 'docs' when asked for tags to be taken to the documentation now.");
+            Console.WriteLine();
             Console.Write("Please enter the tags you want to download for: ");
             string tags = Console.ReadLine();
+            Console.Write("Finding matching images...");
+            if (tags == "docs")
+            {
+                Process.Start("https://derpibooru.org/search/syntax");
+                Environment.Exit(0);
+            }
             string requestUrl =
                 $"https://{domain}/search.json?q={tags}&key={apiKey}&sf=created_at&sd=desc&perpage=50&page=";
             DerpibooruResponse.Rootobject first_images =
@@ -46,7 +74,7 @@ namespace DerpibooruDownloader
                     allimages.AddRange(images.search.ToList());
                 }
             }
-
+            Console.WriteLine("Done!");
             Console.WriteLine($"{allimages.Count} images to download!");
             int u = 1;
             foreach (DerpibooruResponse.Search i in allimages)
