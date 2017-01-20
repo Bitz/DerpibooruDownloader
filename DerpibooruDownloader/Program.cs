@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using static System.Console;
 
 namespace DerpibooruDownloader
 {
@@ -17,8 +18,8 @@ namespace DerpibooruDownloader
     {
         static void Main()
         {
-            string title = "DD";
-            Console.Title = title;
+            string title = "DD 0.2";
+            Title = title;
             string apiKey;
             string domain = "derpibooru.org";
             string cDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
@@ -26,30 +27,32 @@ namespace DerpibooruDownloader
             cDir = $"{cDir}{downloadFolder}";
             Get.SetDownloadFolder(cDir);
             Directory.CreateDirectory(cDir);
-            var consolecolor = Console.ForegroundColor;
-
+            
             if (Properties.Settings.Default.ApiKey.Length == 0)
             {
-                Console.Write("Please enter your API key: ");
-                apiKey = Console.ReadLine();
+                Write("Please enter your API key: ");
+                apiKey = ReadLine();
                 Properties.Settings.Default.ApiKey = apiKey;
                 Properties.Settings.Default.Save();
-
             }
             else
             {
                 apiKey = Properties.Settings.Default.ApiKey;
             }
-
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("This downloads ALL the images that match the tags you specificy.");
-            Console.ForegroundColor = consolecolor;
-            Console.WriteLine("Check out the search syntax docs to learn how the search should be used.");
-            Console.WriteLine("Type 'docs' when asked for tags to be taken to the documentation now.");
-            Console.WriteLine();
-            Console.Write("Please enter the tags you want to download for: ");
-            string tags = Console.ReadLine();
-            Console.Write("Finding matching images...");
+            WriteLine("Check out the search syntax docs to learn how the search should be used.");
+            WriteLine("Type 'docs' when asked for tags to be taken to the documentation now.");
+            WriteLine();
+            Write("Please enter the tags you want to download for: ");
+            string tags = ReadLine();
+            Write("How many images do you want to download? (0 - ALL): ");
+            string input = ReadLine();
+            int limit = 0;
+            if (input != null)
+            {
+                limit = int.Parse(input);
+            }
+          
+            Write("Finding matching images...");
             if (tags == "docs")
             {
                 Process.Start("https://derpibooru.org/search/syntax");
@@ -62,33 +65,49 @@ namespace DerpibooruDownloader
             List<DerpibooruResponse.Search> allimages = new List<DerpibooruResponse.Search>();
             allimages.AddRange(first_images.search.ToList());
             int total_items = first_images.total;
-            int pages = (int) Math.Ceiling(total_items/50.0);
-
-            if (allimages.Count <= total_items)
+            int pagesToGet;
+            if (limit != 0)
             {
-                for (int i = 2; i <= pages; i++)
+                pagesToGet = (int) Math.Ceiling(limit/50.0);
+            }
+            else
+            {
+                pagesToGet = (int) Math.Ceiling(total_items/50.0);
+            }
+
+            while (allimages.Count < pagesToGet * 50 && (total_items > allimages.Count))
+            {
+                for (int i = 2; i <= pagesToGet; i++)
                 {
                     DerpibooruResponse.Rootobject images =
-                        JsonConvert.DeserializeObject<DerpibooruResponse.Rootobject>(
-                            Get.Derpibooru($"{requestUrl}{i}").Result);
+                        JsonConvert.DeserializeObject<DerpibooruResponse.Rootobject>(Get.Derpibooru($"{requestUrl}{i}").Result);
                     allimages.AddRange(images.search.ToList());
-                }
+                }            
             }
-            Console.WriteLine("Done!");
-            Console.WriteLine($"{allimages.Count} images to download!");
+
+            if ((allimages.Count > limit ) && limit != 0) 
+            { 
+                int l = allimages.Count - limit;
+                allimages.RemoveRange(limit -1 , l);
+            }
+            int titlenum = allimages.Count;
+            WriteLine("Done!");
+            WriteLine($"{allimages.Count} images to download!");
+            WriteLine("Press ANY button to start downloading.");
+            ReadLine();
             int u = 1;
             foreach (DerpibooruResponse.Search i in allimages)
             {
-                Console.Title = $"{title} [{u}/{total_items}]";
+                Title = $"{title} [{u}/{titlenum}]";
                 Get.DownloadImage(i.image, i.id);
                 u++;
                 if (u <= total_items)
                 {
-                    Console.Title = $"{title} [{u}/{total_items}]";
+                    Title = $"{title} [{u}/{titlenum}]";
                 }
             }
-            Console.WriteLine("DONE ALL!");
-            Console.ReadLine();
+            WriteLine("DONE ALL!");
+            ReadLine();
         }
     }
 
@@ -98,7 +117,7 @@ namespace DerpibooruDownloader
 
         public static void DownloadImage(string url, string id)
         {
-            Console.Write($"Downloading {id}...");
+            Write($"Downloading {id}...");
             string extension = Path.GetExtension(url);
             string fileName = $"{id}{extension}";
 
@@ -110,7 +129,7 @@ namespace DerpibooruDownloader
                     AutoResetEvent notifier = new AutoResetEvent(false);
                     webConnection.DownloadFileCompleted += delegate
                     {
-                        Console.WriteLine("Done!");
+                        WriteLine("Done!");
                         notifier.Set();
                     };
 
@@ -120,7 +139,7 @@ namespace DerpibooruDownloader
             }
             else
             {
-                Console.WriteLine("Already exists!");
+                WriteLine("Already exists!");
             }
         }
 
