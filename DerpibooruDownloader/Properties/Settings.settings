@@ -3,7 +3,10 @@
   <Profiles />
   <Settings>
     <Setting Name="ApiKey" Type="System.String" Scope="User">
-      <Value Profile="(Default)">dUHzpM6KBCnSCXzCUf26</Value>
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="FilterId" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
     </Setting>
   </Settings>
 </SettingsFile>

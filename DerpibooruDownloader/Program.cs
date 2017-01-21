@@ -18,27 +18,62 @@ namespace DerpibooruDownloader
     {
         static void Main()
         {
-            string title = "DD 0.2";
+            string title = "DD 0.3";
             Title = title;
-            string apiKey;
+            string apiKey = string.Empty;
+            string filter = string.Empty;
             string domain = "derpibooru.org";
             string cDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             string downloadFolder = Get.IsMono() ? "/Downloads" : "\\Downloads";
             cDir = $"{cDir}{downloadFolder}";
             Get.SetDownloadFolder(cDir);
             Directory.CreateDirectory(cDir);
-            
-            if (Properties.Settings.Default.ApiKey.Length == 0)
+
+            if (Properties.Settings.Default.ApiKey.Length <= 0)
             {
-                Write("Please enter your API key: ");
-                apiKey = ReadLine();
-                Properties.Settings.Default.ApiKey = apiKey;
-                Properties.Settings.Default.Save();
+                Write("Do you want to use an API key? Y/N ");
+                string s = ReadKey().ToString();
+                if (s == "Y")
+                {
+                    WriteLine("Please enter your API key: ");
+                    apiKey = ReadLine();
+                    Properties.Settings.Default.ApiKey = apiKey;
+                    Properties.Settings.Default.Save();
+                    apiKey = "&key=" + apiKey;
+                }
+                else
+                {
+                    WriteLine();
+                }
             }
             else
             {
-                apiKey = Properties.Settings.Default.ApiKey;
+                WriteLine("API Key found!");
             }
+
+            if (Properties.Settings.Default.FilterId.Length <= 0)
+            {
+                Write("Do you want to use an Filter ID key? Y/N ");
+                string s = ReadKey().ToString();
+                if (s == "Y")
+                {
+                    WriteLine("Please enter your API key: ");
+                    apiKey = ReadLine();
+                    Properties.Settings.Default.FilterId = filter;
+                    Properties.Settings.Default.Save();
+                    filter = "&filter_id=" + filter;
+                }
+                else
+                {
+                    WriteLine();
+                }
+            }
+            else
+            {
+                WriteLine("Filter ID found!");
+            }
+
+
             WriteLine("Check out the search syntax docs to learn how the search should be used.");
             WriteLine("Type 'docs' when asked for tags to be taken to the documentation now.");
             WriteLine();
@@ -59,12 +94,12 @@ namespace DerpibooruDownloader
                 Environment.Exit(0);
             }
             string requestUrl =
-                $"https://{domain}/search.json?q={tags}&key={apiKey}&sf=created_at&sd=desc&perpage=50&page=";
-            DerpibooruResponse.Rootobject first_images =
+                $"https://{domain}/search.json?q={tags}{apiKey}{filter}&sf=created_at&sd=desc&perpage=50&page=";
+            DerpibooruResponse.Rootobject firstImages =
                 JsonConvert.DeserializeObject<DerpibooruResponse.Rootobject>(Get.Derpibooru($"{requestUrl}1").Result);
             List<DerpibooruResponse.Search> allimages = new List<DerpibooruResponse.Search>();
-            allimages.AddRange(first_images.search.ToList());
-            int total_items = first_images.total;
+            allimages.AddRange(firstImages.search.ToList());
+            int totalItems = firstImages.total;
             int pagesToGet;
             if (limit != 0)
             {
@@ -72,10 +107,10 @@ namespace DerpibooruDownloader
             }
             else
             {
-                pagesToGet = (int) Math.Ceiling(total_items/50.0);
+                pagesToGet = (int) Math.Ceiling(totalItems/50.0);
             }
 
-            while (allimages.Count < pagesToGet * 50 && (total_items > allimages.Count))
+            while (allimages.Count < pagesToGet * 50 && (totalItems > allimages.Count))
             {
                 for (int i = 2; i <= pagesToGet; i++)
                 {
@@ -101,7 +136,7 @@ namespace DerpibooruDownloader
                 Title = $"{title} [{u}/{titlenum}]";
                 Get.DownloadImage(i.image, i.id);
                 u++;
-                if (u <= total_items)
+                if (u <= totalItems)
                 {
                     Title = $"{title} [{u}/{titlenum}]";
                 }
@@ -113,7 +148,7 @@ namespace DerpibooruDownloader
 
     public class Get
     {
-        private static string cDir;
+        private static string _cDir;
 
         public static void DownloadImage(string url, string id)
         {
@@ -121,7 +156,7 @@ namespace DerpibooruDownloader
             string extension = Path.GetExtension(url);
             string fileName = $"{id}{extension}";
 
-            string downloadPath = IsMono() ? $@"{cDir}/{fileName}" : $@"{cDir}\{fileName}";
+            string downloadPath = IsMono() ? $@"{_cDir}/{fileName}" : $@"{_cDir}\{fileName}";
             if (!File.Exists(downloadPath))
             {
                 using (WebClient webConnection = new WebClient())
@@ -169,7 +204,7 @@ namespace DerpibooruDownloader
 
         public static void SetDownloadFolder(string c)
         {
-            cDir = c;
+            _cDir = c;
         }
     }
 }
