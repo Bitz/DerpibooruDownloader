@@ -32,10 +32,11 @@ namespace DerpibooruDownloader
             if (Properties.Settings.Default.ApiKey.Length <= 0)
             {
                 Write("Do you want to use an API key? Y/N ");
-                string s = ReadKey().ToString();
-                if (s == "Y")
+                string s = ReadKey().KeyChar.ToString().ToLower();
+                if (s == "y")
                 {
-                    WriteLine("Please enter your API key: ");
+                    WriteLine();
+                    Write("Please enter your API key: ");
                     apiKey = ReadLine();
                     Properties.Settings.Default.ApiKey = apiKey;
                     Properties.Settings.Default.Save();
@@ -44,21 +45,24 @@ namespace DerpibooruDownloader
                 else
                 {
                     WriteLine();
+                 
                 }
             }
             else
             {
                 WriteLine("API Key found!");
+                apiKey = "&key=" + Properties.Settings.Default.ApiKey;
             }
 
             if (Properties.Settings.Default.FilterId.Length <= 0)
             {
                 Write("Do you want to use an Filter ID key? Y/N ");
-                string s = ReadKey().ToString();
-                if (s == "Y")
+                string s = ReadKey().KeyChar.ToString().ToLower();
+                if (s == "y")
                 {
-                    WriteLine("Please enter your API key: ");
-                    apiKey = ReadLine();
+                    WriteLine();
+                    Write("Please enter your Filter ID key: ");
+                    filter = ReadLine();
                     Properties.Settings.Default.FilterId = filter;
                     Properties.Settings.Default.Save();
                     filter = "&filter_id=" + filter;
@@ -71,6 +75,7 @@ namespace DerpibooruDownloader
             else
             {
                 WriteLine("Filter ID found!");
+                filter = "&filter_id=" + Properties.Settings.Default.FilterId;
             }
 
 
@@ -133,12 +138,12 @@ namespace DerpibooruDownloader
             int u = 1;
             foreach (DerpibooruResponse.Search i in allimages)
             {
-                Title = $"{title} [{u}/{titlenum}]";
+                Title = $"{title} [{u}/{limit}]";
                 Get.DownloadImage(i.image, i.id);
                 u++;
-                if (u <= totalItems)
+                if (u <= limit)
                 {
-                    Title = $"{title} [{u}/{titlenum}]";
+                    Title = $"{title} [{u}/{limit}]";
                 }
             }
             WriteLine("DONE ALL!");
