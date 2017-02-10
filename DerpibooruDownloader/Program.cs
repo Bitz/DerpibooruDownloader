@@ -14,12 +14,14 @@ using static System.Console;
 
 namespace DerpibooruDownloader
 {
-    class Program
+   class Program
     {
         static void Main()
         {
-            string title = "DD 0.3";
+            string title = "DD 0.4";
             Title = title;
+            string requestUrl = string.Empty;
+            List<string> commands = new List<string> {"docs", "clear"};
             string apiKey = string.Empty;
             string filter = string.Empty;
             string domain = "derpibooru.org";
@@ -28,7 +30,6 @@ namespace DerpibooruDownloader
             cDir = $"{cDir}{downloadFolder}";
             Get.SetDownloadFolder(cDir);
             Directory.CreateDirectory(cDir);
-
             if (Properties.Settings.Default.ApiKey.Length <= 0)
             {
                 Write("Do you want to use an API key? Y/N ");
@@ -44,14 +45,18 @@ namespace DerpibooruDownloader
                 }
                 else
                 {
+                    Properties.Settings.Default.ApiKey = "none";
+                    Properties.Settings.Default.Save();
                     WriteLine();
-                 
                 }
             }
             else
             {
-                WriteLine("API Key found!");
-                apiKey = "&key=" + Properties.Settings.Default.ApiKey;
+                if (Properties.Settings.Default.ApiKey != "none")
+                {
+                    WriteLine("API Key found!");
+                    apiKey = "&key=" + Properties.Settings.Default.ApiKey;
+                }
             }
 
             if (Properties.Settings.Default.FilterId.Length <= 0)
@@ -69,37 +74,59 @@ namespace DerpibooruDownloader
                 }
                 else
                 {
+                    Properties.Settings.Default.FilterId = "none";
+                    Properties.Settings.Default.Save();
                     WriteLine();
                 }
             }
             else
             {
-                WriteLine("Filter ID found!");
-                filter = "&filter_id=" + Properties.Settings.Default.FilterId;
+                if (Properties.Settings.Default.FilterId != "none")
+                {
+                    WriteLine("Filter ID found!");
+                    filter = "&filter_id=" + Properties.Settings.Default.FilterId;
+                }
             }
 
-
             WriteLine("Check out the search syntax docs to learn how the search should be used.");
-            WriteLine("Type 'docs' when asked for tags to be taken to the documentation now.");
+            WriteLine("You can also enter the following when asked for tags:");
+            WriteLine("'docs'  - page with search documentation will open.");
+            WriteLine("'clear' - delete the stored API key and filter ID.");
             WriteLine();
             Write("Please enter the tags you want to download for: ");
             string tags = ReadLine();
-            Write("How many images do you want to download? (0 - ALL): ");
+            if (!commands.Contains(tags))
+            {
+                requestUrl =
+                    $"https://{domain}/search.json?q={tags}{apiKey}{filter}&sf=created_at&sd=desc&perpage=50&page=";
+                int count =
+                    JsonConvert.DeserializeObject<DerpibooruResponse.Rootobject>(Get.Derpibooru($"{requestUrl}1").Result)
+                        .total;
+                WriteLine($"{count} matching images found!");
+            }
+            else
+            {
+                RunCommand(tags);
+            }
+            Write("How many images do you want to download? (0 = ALL): ");
             string input = ReadLine();
             int limit = 0;
             if (input != null)
             {
-                limit = int.Parse(input);
+                try
+                {
+                    limit = int.Parse(input);
+                }
+                catch (Exception)
+                {
+                    limit = 0;
+                }
+              
             }
           
             Write("Finding matching images...");
-            if (tags == "docs")
-            {
-                Process.Start("https://derpibooru.org/search/syntax");
-                Environment.Exit(0);
-            }
-            string requestUrl =
-                $"https://{domain}/search.json?q={tags}{apiKey}{filter}&sf=created_at&sd=desc&perpage=50&page=";
+            
+
             DerpibooruResponse.Rootobject firstImages =
                 JsonConvert.DeserializeObject<DerpibooruResponse.Rootobject>(Get.Derpibooru($"{requestUrl}1").Result);
             List<DerpibooruResponse.Search> allimages = new List<DerpibooruResponse.Search>();
@@ -124,18 +151,20 @@ namespace DerpibooruDownloader
                     allimages.AddRange(images.search.ToList());
                 }            
             }
-
-            if ((allimages.Count > limit ) && limit != 0) 
+            int titlenum = allimages.Count;
+            if ((titlenum > limit ) && limit != 0) 
             { 
                 int l = allimages.Count - limit;
                 allimages.RemoveRange(limit -1 , l);
+                titlenum = allimages.Count;
             }
-            int titlenum = allimages.Count;
+            
             WriteLine("Done!");
-            WriteLine($"{allimages.Count} images to download!");
+            WriteLine($"{titlenum} images to download!");
             WriteLine("Press ANY button to start downloading.");
             ReadLine();
             int u = 1;
+            if (limit == 0) limit = titlenum;
             foreach (DerpibooruResponse.Search i in allimages)
             {
                 Title = $"{title} [{u}/{limit}]";
@@ -146,8 +175,28 @@ namespace DerpibooruDownloader
                     Title = $"{title} [{u}/{limit}]";
                 }
             }
+            Process.Start(cDir);
             WriteLine("DONE ALL!");
             ReadLine();
+        }
+
+        private static void RunCommand(string tags)
+        {
+            switch (tags)
+            {
+                case "docs":
+                    Process.Start("https://derpibooru.org/search/syntax");
+                    Environment.Exit(0);
+                    break;
+                case "clear":
+                    Write("Cleared config, restart the application.");
+                    Properties.Settings.Default.FilterId = null;
+                    Properties.Settings.Default.ApiKey = null;
+                    Properties.Settings.Default.Save();
+                    ReadLine();
+                    Environment.Exit(0);
+                    break;
+            }
         }
     }
 

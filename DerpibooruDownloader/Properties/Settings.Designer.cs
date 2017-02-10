@@ -25,7 +25,7 @@ namespace DerpibooruDownloader.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("none")]
         public string ApiKey {
             get {
                 return ((string)(this["ApiKey"]));
@@ -37,7 +37,7 @@ namespace DerpibooruDownloader.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("56027")]
         public string FilterId {
             get {
                 return ((string)(this["FilterId"]));

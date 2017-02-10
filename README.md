@@ -7,10 +7,13 @@
 2. Close Application
 3. [Go read up on how powerful the Derpibooru search really is](https://derpibooru.org/search/syntax)
 4. Start up the Application again
-5. Enter the tags you want to search for
-5. Enter the number of images you want to download
-6. Wait
-7. Done
+5. Use the following settings for normal usage: 
+> Do you want to use an API key? Y/N n
+> Do you want to use an Filter ID key? Y/N y
+> Please enter your Filter ID key: 56027
+6. Enter the tags you want to search for
+7. Enter the number of images you want to download
+8. Wait
+9. Done
+10. A folder with the downloaded images should open
 
-## Advanced usage  ##
-If you have a custom API key, feel free to throw it into `DerpibooruDownloader.exe.config ` on **line 14**.
